@@ -1,0 +1,17 @@
+# Ansible
+*.retry
+.ansible/
+*.log
+
+# Editor / OS
+.vscode
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Secrets
+valut-password
+*.vault
+.env
