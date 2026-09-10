@@ -1,0 +1,11 @@
+---
+# Group-level settings for the dns_servers group.
+# These override roles/dnsmasq/defaults/main.yml and are committed
+# to the repository, unlike local.yml.
+
+# Nothing overridden yet: the role defaults suit this project.
+# Uncomment and adjust as the environment grows.
+
+# dnsmasq_upstream_servers:
+#   - 1.1.1.1
+#   - 9.9.9.9

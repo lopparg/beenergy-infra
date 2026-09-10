@@ -3,15 +3,21 @@
 .ansible/
 *.log
 
+# Local overrides — never committed
+local.yml
+local.yaml
+*.local.yml
+
+# Secrets
+vault-password
+.vault-pass
+*.vault
+.env
+
 # Editor / OS
-.vscode
+.vscode/
 .idea/
 *.swp
 *~
 .DS_Store
 Thumbs.db
-
-# Secrets
-valut-password
-*.vault
-.env
