@@ -1,0 +1,73 @@
+---
+# Configure, write the dnsmasq drop-in config, point the system
+# resolver at dnsmasq, and start the service
+# 
+# Order matters: the config must be valid and dnsmasq must be running
+# before /etc/resolv.conf is repointed, otherwise the host loses DNS.
+
+- name: Deploy dnsmasq configuration
+  ansible.builtin.template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dnsmasq.d/10-ansible.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "dnsmasq --test --conf-file=%s"
+  become: true
+  notify: Restart dnsmasq
+  tags: [config]
+
+- name: Add static host entries for local name resolution
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "\\s{{ item.name }}(\\s|$)"
+    line: "{{ item.ip }} {{ item.name }}"
+    state: present
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  loop: "{{ dnsmasq_static_hosts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  notify: Restart dnsmasq
+  tags: [config]
+
+- name: Enable and start dnsmasq
+  ansible.builtin.systemd_service:
+    name: "{{ dnsmasq_service_name }}"
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true
+  tags: [config]
+
+- name: Apply pending restarts before repointing the resolver
+  ansible.builtin.meta: flush_handlers
+  tags: [config]
+
+- name: Wait until dnsmasq is accepting DNS queries
+  ansible.builtin.wait_for:
+    port: 53
+    host: 127.0.0.1
+    state: started
+    timeout: 30
+  tags: [config]
+
+- name: Point the system resolver at dnsmasq
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: "0644"
+    follow: false
+    content: |
+      # Managed by Ansible - do not edit manually.
+      # The local resolver is dnsmasq; upstream servers are defined
+      # in /etc/dnsmasq.d/10-ansible.conf
+      nameserver 127.0.0.1
+      options edns0 trust-ad
+      search {{ dnsmasq_local_domain }}
+  become: true
+  when: dnsmasq_manage_resolv_conf | bool
+  tags: [config, resolv]

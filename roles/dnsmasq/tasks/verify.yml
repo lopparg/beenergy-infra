@@ -1,0 +1,90 @@
+# Verify and prove the deployment actually works.
+#
+# These checks are what turn "the playbook ran" into "the service works".
+# All of them are read-only, so they never affect idempotency.
+
+- name: Confirm dnsmasq service is running
+  ansible.builtin.systemd_service:
+    name: "{{ dnsmasq_service_name }}"
+  register: dnsmasq_svc
+  changed_when: false
+  tags: [verify]
+
+- name: Assert dnsmasq is active and enabled at boot
+  ansible.builtin.assert:
+    that:
+      - dnsmasq_svc.status.ActiveState == 'active'
+      - dnsmasq_svc.status.UnitFileState == 'enabled'
+    fail_msg: "dnsmasq is not healthy. ActiveState={{ dnsmasq_svc.status.ActiveState }}, UnitFileState={{ dnsmasq_svc.status.UnitFileState }}"
+    success_msg: "dnsmasq is active and enabled."
+  tags: [verify]
+
+- name: Collect listeners on port 53
+  ansible.builtin.shell:
+    cmd: ss -tulpnH 'sport = :53' || true
+  become: true
+  register: port53_final
+  changed_when: false
+  tags: [verify]
+
+- name: Assert dnsmasq is the only process bound to port 53
+  ansible.builtin.assert:
+    that:
+      - port53_final.stdout | trim | length > 0
+      - "'dnsmasq' in port53_final.stdout"
+      - "'systemd-resolve' not in port53_final.stdout"
+    fail_msg: "Port 53 is not exclusively owned by dnsmasq. Listeners: {{ port53_final.stdout_lines }}"
+    success_msg: "Port 53 is served by dnsmasq only."
+  tags: [verify]
+
+- name: Assert no DHCP service is listening on port 67
+  ansible.builtin.shell:
+    cmd: ss -ulpnH 'sport = :67' || true
+  become: true
+  register: port67_check
+  changed_when: false
+  failed_when: port67_check.stdout | trim | length > 0
+  tags: [verify]
+
+- name: Resolve test domains through dnsmasq
+  ansible.builtin.command:
+    cmd: "dig @127.0.0.1 {{ item }} +short +time=3 +tries=2"
+  register: dig_results
+  changed_when: false
+  failed_when: dig_results.rc != 0 or dig_results.stdout | trim | length == 0
+  loop: "{{ dnsmasq_verify_domains }}"
+  loop_control:
+    label: "{{ item }}"
+  tags: [verify]
+
+- name: Report resolution results
+  ansible.builtin.debug:
+    msg: "{{ item.item }} resolved to {{ item.stdout_lines }}"
+  loop: "{{ dig_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  tags: [verify]
+
+- name: Query a domain twice to exercise the cache
+  ansible.builtin.shell:
+    cmd: |
+      dig @127.0.0.1 {{ dnsmasq_verify_domains[0] }} +noall +stats > /dev/null/
+      dig @127.0.0.1 {{ dnsmasq_verify_domains[0] }} +noall +stats | grep 'Query time'
+  register: cache_check
+  changed_when: false
+  tags: [verify]
+
+- name: Report cache behaviour
+  ansible.builtin.debug:
+    msg: "Cached query timing: {{ cache_check.stdout | trim }}"
+  tags: [verify]
+
+- name: Summarise the deployment
+  ansible.builtin.debug:
+    msg:
+      - "dnsmasq is running as a caching DNS forwarder."
+      - "Upstream servers: {{ dnsmasq_upstream_servers | join(', ') }}"
+      - "Local domain: {{ dnsmasq_local_domain }}"
+      - "Cache size: {{ dnsmasq_cache_size }} entries"
+      - "DHCP: disabled (no dhcp-range configured)"
+  tags: [verify]

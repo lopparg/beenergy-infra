@@ -1,0 +1,88 @@
+---
+# ===================================================================
+# Preflight - port 53 conflict detection and resolution
+# On Ubuntu, systemd-resolved binds ports 53 on 127.0.0.53 and
+# 127.0.0.54 (both UDP and TCP), dnsmasq cannot start while those
+# sockets are held: it fails with "Address already in use".
+#
+# Strategy: disable the stub listener, restart systemd-resolved,
+# then VERIFY the port is actually free before installing anything.
+# ===================================================================
+
+- name: Install diagnostic tools required by preflight checks
+  ansible.builtin.apt:
+    name:
+      - iproute2
+      - dnsutils
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  tags: [preflight]
+
+- name: Detect which processes are listening on port 53
+  ansible.builtin.shell:
+    cmd: ss -tulpnH 'sport = :53' || true
+  become: true
+  register: port53_before
+  changed_when: false
+  tags: [preflight]
+
+- name: Report current port 53 occupants
+  ansible.builtin.debug:
+    msg: "Port 53 listeners before changes: {{ port53_before.stdout_lines | default(['none'], true) }}"
+  tags: [preflight]
+
+- name: Check whether systemd-resolved is present on this host
+  ansible.builtin.stat:
+    path: /lib/systemd/system/systemd-resolved.service
+  register: resolved_unit
+  tags: [preflight]
+
+- name: Disable the systemd-resolved DNS stub listener
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: '^\s*#?\s*DNSStubListener\s*='
+    line: 'DNSStubListener=no'
+    insertafter: '^\[Resolve\]'
+    state: present
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  when:
+    - dnsmasq_manage_systemd_resolved | bool
+    - resolved_unit.stat.exists
+  notify: Restart systemd-resolved
+  tags: [preflight]
+
+- name: Apply systemd-resolved changes immediately
+  ansible.builtin.meta: flush_handlers
+  tags: [preflight]
+
+- name: Wait for port 53 to be released
+  ansible.builtin.wait_for:
+    port: 53
+    host: 127.0.0.53
+    state: stopped
+    timeout: 30
+  when:
+    - dnsmasq_manage_systemd_resolved | bool
+    - resolved_unit.stat.exists
+  tags: [preflight]
+
+- name: Re-check port 53 after releasing the stub listener
+  ansible.builtin.shell:
+      cmd: ss -tulpnH 'sport = :53' || true
+  become: true
+  register: port53_after
+  changed_when: false
+  tags: [preflight]
+
+- name: Fail if port 53 is still held by another process
+  ansible.builtin.assert:
+    that:
+      - port53_after.stdout_lines | reject('search', 'dnsmasq') | list | length == 0
+    fail_msg: "Port 53 is still in use by another process. dnsmasq cannot start. Current listeners: {{ port53_after.stdout_lines }} Investigate with: sudo ss -tulpn | grep ':53'"
+    success_msg: "Port 53 is free or already served by dnsmasq."
+  tags: [preflight]
