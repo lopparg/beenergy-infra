@@ -1,6 +1,3 @@
-# dnsmasq role entry point.
-# Ansible runs this file automatically when the role is applied.
-
 - name: Verify the target OS is supported
   ansible.builtin.assert:
     that:

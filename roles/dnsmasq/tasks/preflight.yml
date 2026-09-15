@@ -1,14 +1,3 @@
----
-# ===================================================================
-# Preflight - port 53 conflict detection and resolution
-# On Ubuntu, systemd-resolved binds ports 53 on 127.0.0.53 and
-# 127.0.0.54 (both UDP and TCP), dnsmasq cannot start while those
-# sockets are held: it fails with "Address already in use".
-#
-# Strategy: disable the stub listener, restart systemd-resolved,
-# then VERIFY the port is actually free before installing anything.
-# ===================================================================
-
 - name: Install diagnostic tools required by preflight checks
   ansible.builtin.apt:
     name:

@@ -1,8 +1,3 @@
-# Verify and prove the deployment actually works.
-#
-# These checks are what turn "the playbook ran" into "the service works".
-# All of them are read-only, so they never affect idempotency.
-
 - name: Confirm dnsmasq service is running
   ansible.builtin.systemd_service:
     name: "{{ dnsmasq_service_name }}"

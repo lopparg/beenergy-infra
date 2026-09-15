@@ -1,7 +1,3 @@
----
-# Handlers run only when a task notifies them, and only once per play
-# no matter how many tasks fired to notification.
-
 - name: Restart systemd-resolved
   ansible.builtin.systemd_service:
     name: systemd-resolved

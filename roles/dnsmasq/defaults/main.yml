@@ -1,23 +1,8 @@
----
-# ============================================================
-# dnsmasq role — default variables
-# ============================================================
-# Variable precedence (weakest to strongest):
-#   defaults/ < group_vars/ < host_vars/ < --extra-vars
-#
-# To override for your own environment:
-#   cp local.example.yml local.yml && nano local.yml
-#   ansible-playbook playbooks/site.yml -e @local.yml -K
-# ============================================================
-
 # ---- Package ----
 dnsmasq_package_name: dnsmasq
 dnsmasq_service_name: dnsmasq
 
 # ---- Upstream DNS ----
-# Public resolvers by default: deterministic, so anyone cloning this
-# repository gets the same result. On an isolated network, set your
-# own gateway instead (this VM's NAT gateway is 192.168.72.2).
 dnsmasq_upstream_servers:
   - 1.1.1.1
   - 8.8.8.8
@@ -28,7 +13,6 @@ dnsmasq_listen_addresses:
 dnsmasq_bind_interfaces: true
 
 # ---- Local domain ----
-# .local is deliberately NOT used: it is reserved for mDNS (RFC 6762).
 dnsmasq_local_domain: beenergy.internal
 dnsmasq_expand_hosts: true
 
@@ -48,9 +32,6 @@ dnsmasq_stop_dns_rebind: true
 dnsmasq_no_resolv: true
 
 # ---- DHCP ----
-# Requirement: "we do not need dhcp server".
-# dnsmasq only starts its DHCP service when a dhcp-range is defined.
-# None is defined, so no DHCP service will run. This flag documents intent.
 dnsmasq_enable_dhcp: false
 
 # ---- Logging ----

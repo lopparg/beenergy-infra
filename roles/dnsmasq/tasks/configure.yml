@@ -1,10 +1,3 @@
----
-# Configure, write the dnsmasq drop-in config, point the system
-# resolver at dnsmasq, and start the service
-# 
-# Order matters: the config must be valid and dnsmasq must be running
-# before /etc/resolv.conf is repointed, otherwise the host loses DNS.
-
 - name: Deploy dnsmasq configuration
   ansible.builtin.template:
     src: dnsmasq.conf.j2

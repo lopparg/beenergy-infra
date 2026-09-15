@@ -1,13 +1,8 @@
----
 - name: Deploy dnsmasq as a caching DNS forwarder
   hosts: dns_servers
   gather_facts: true
 
   pre_tasks:
-    # Ubuntu 25.10+ ships sudo-rs (Rust) as the default sudo.
-    # It rejects the way Ansible feeds the become password over stdin,
-    # failing with "interactive authentication is required".
-    # The original sodu remains available as /usr/bin/sudo.ws.
     - name: Check for the original sudo binary (sudo-rs workaround)
       ansible.builtin.stat:
         path: /usr/bin/sudo.ws
