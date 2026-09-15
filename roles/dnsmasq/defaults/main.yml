@@ -1,0 +1,49 @@
+# ---- Package ----
+dnsmasq_package_name: dnsmasq
+dnsmasq_service_name: dnsmasq
+
+# ---- Upstream DNS ----
+dnsmasq_upstream_servers:
+  - 1.1.1.1
+  - 8.8.8.8
+
+# ---- Listening ----
+dnsmasq_listen_addresses:
+  - 127.0.0.1
+dnsmasq_bind_interfaces: true
+
+# ---- Local domain ----
+dnsmasq_local_domain: beenergy.internal
+dnsmasq_expand_hosts: true
+
+# ---- Static records (used by the verification step) ----
+dnsmasq_static_hosts:
+  - name: "dns.{{ dnsmasq_local_domain }}"
+    ip: 127.0.0.1
+
+# ---- Cache ----
+dnsmasq_cache_size: 1000
+dnsmasq_neg_ttl: 60
+
+# ---- Privacy and hygiene ----
+dnsmasq_domain_needed: true
+dnsmasq_bogus_priv: true
+dnsmasq_stop_dns_rebind: true
+dnsmasq_no_resolv: true
+
+# ---- DHCP ----
+dnsmasq_enable_dhcp: false
+
+# ---- Logging ----
+dnsmasq_log_queries: false
+dnsmasq_log_facility: /var/log/dnsmasq.log
+
+# ---- Port 53 conflict management ----
+dnsmasq_manage_systemd_resolved: true
+dnsmasq_manage_resolv_conf: true
+
+# ---- Verification ----
+dnsmasq_verify_enabled: true
+dnsmasq_verify_domains:
+  - github.com
+  - "dns.{{ dnsmasq_local_domain }}"

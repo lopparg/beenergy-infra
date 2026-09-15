@@ -1,0 +1,33 @@
+---
+# Example local overrides.
+#
+#   cp local.example.yml local.yml
+#   nano local.yml
+#   ansible-playbook playbooks/site.yml -e @local.yml -K
+#
+# local.yml is gitignored, so your environment stays out of the repo.
+
+# Use your own network's DNS instead of public resolvers.
+# On a VMware NAT network this is usually the gateway address.
+# dnsmasq_upstream_servers:
+#   - 192.168.72.2
+
+# Serve DNS to other machines on the network, not just localhost.
+# dnsmasq_listen_addresses:
+#   - 127.0.0.1
+#   - 192.168.72.10
+
+# Use a different internal domain.
+# dnsmasq_local_domain: example.internal
+
+# Add static records for hosts on your network.
+# dnsmasq_static_hosts:
+#   - name: web.example.internal
+#     ip: 192.168.72.20
+
+# Turn on query logging while debugging (noisy).
+# dnsmasq_log_queries: true
+
+# Leave systemd-resolved and /etc/resolv.conf untouched.
+# dnsmasq_manage_systemd_resolved: false
+# dnsmasq_manage_resolv_conf: false

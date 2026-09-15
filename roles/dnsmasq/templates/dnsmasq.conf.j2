@@ -1,0 +1,62 @@
+# {{ ansible_managed }}
+# dnsmasq configuration — managed by Ansible. Do not edit manually.
+# Source: roles/dnsmasq/templates/dnsmasq.conf.j2
+
+# ---- Listening ----
+port=53
+{% for addr in dnsmasq_listen_addresses %}
+listen-address={{ addr }}
+{% endfor %}
+{% if dnsmasq_bind_interfaces %}
+bind-interfaces
+{% endif %}
+
+# ---- Upstream resolvers ----
+{% if dnsmasq_no_resolv %}
+no-resolv
+{% endif %}
+{% for server in dnsmasq_upstream_servers %}
+server={{ server }}
+{% endfor %}
+
+# ---- Local domain ----
+domain={{ dnsmasq_local_domain }}
+local=/{{ dnsmasq_local_domain }}/
+{% if dnsmasq_expand_hosts %}
+expand-hosts
+{% endif %}
+
+{% if dnsmasq_static_hosts | length > 0 %}
+# ---- Static records ----
+{% for host in dnsmasq_static_hosts %}
+address=/{{ host.name }}/{{ host.ip }}
+{% endfor %}
+{% endif %}
+
+# ---- Cache ----
+cache-size={{ dnsmasq_cache_size }}
+neg-ttl={{ dnsmasq_neg_ttl }}
+
+# ---- Privacy and hygiene ----
+{% if dnsmasq_domain_needed %}
+domain-needed
+{% endif %}
+{% if dnsmasq_bogus_priv %}
+bogus-priv
+{% endif %}
+{% if dnsmasq_stop_dns_rebind %}
+stop-dns-rebind
+{% endif %}
+
+# ---- DHCP ----
+{% if not dnsmasq_enable_dhcp %}
+# DHCP is intentionally disabled: no dhcp-range is defined,
+# so dnsmasq never starts its DHCP service.
+no-dhcp-interface=
+{% endif %}
+
+# ---- Logging ----
+{% if dnsmasq_log_queries %}
+log-queries
+log-facility={{ dnsmasq_log_facility }}
+{% endif %}

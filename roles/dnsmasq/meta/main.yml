@@ -1,0 +1,20 @@
+galaxy_info:
+  role_name: dnsmasq
+  author: irem
+  description: Install and configure dnsmasq as a caching DNS forwarder
+  licence: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      version:
+        - jammy
+        - noble
+    - name: Debian
+      version:
+        - bookworm
+  galaxy_tags:
+    - dns
+    - dnsmasq
+    - networking
+
+dependencies: []

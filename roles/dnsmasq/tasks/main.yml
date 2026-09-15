@@ -1,0 +1,20 @@
+- name: Verify the target OS is supported
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+    fail_msg: "This role supports Debian/Ubuntu only. Detected: {{ ansible_facts['os_family'] }}"
+    success_msg: "Running on {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+  tags: [always]
+
+- name: Run preflight checks
+  ansible.builtin.import_tasks: preflight.yml
+
+- name: Install dnsmasq
+  ansible.builtin.import_tasks: install.yml
+
+- name: Configure dnsmasq
+  ansible.builtin.import_tasks: configure.yml
+
+- name: Verify the deployment
+  ansible.builtin.import_tasks: verify.yml
+  when: dnsmasq_verify_enabled | bool 

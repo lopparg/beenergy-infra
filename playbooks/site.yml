@@ -1,0 +1,20 @@
+- name: Deploy dnsmasq as a caching DNS forwarder
+  hosts: dns_servers
+  gather_facts: true
+
+  pre_tasks:
+    - name: Check for the original sudo binary (sudo-rs workaround)
+      ansible.builtin.stat:
+        path: /usr/bin/sudo.ws
+      register: sudo_ws_binary
+      tags: [always]
+
+    - name: Use the original sudo when sudo-rs is the default
+      ansible.builtin.set_fact:
+        ansible_become_exe: /usr/bin/sudo.ws
+      when: sudo_ws_binary.stat.exists
+      tags: [always]
+
+  roles:
+    - role: dnsmasq
+      tags: [dnsmasq]
